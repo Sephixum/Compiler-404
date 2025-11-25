@@ -61,20 +61,22 @@ static int levenshtein(std::string_view a, std::string_view b) {
     auto dp   = std::vector<int>(n + 1);
     auto prev = std::vector<int>(n + 1);
 
-    for (size_t j = 0; j < n + 1; ++j)
+    // for (size_t j = 0; j < n + 1; ++j)
+    for (auto j : range(0uz, n + 1))
     {
-      prev[j] = j;
+      prev.at(j) = j;
     }
 
-    for (size_t i = 0; i < m; ++i)
+    // for (size_t i = 0; i < m; ++i)
+    for (auto i : range(0uz, m))
     {
-        dp[0] = i + 1;
+        dp.at(0) = i + 1;
         for (size_t j = 0; j < n; ++j) {
-            int cost = (a[i] == b[j]) ? 0 : 1;
-            dp[j + 1] = std::min({
-                prev[j + 1] + 1,    // deletion
-                dp[j] + 1,          // insertion
-                prev[j] + cost      // substitution
+            int cost = (a.at(i) == b.at(j)) ? 0 : 1;
+            dp.at(j + 1) = std::min({
+                prev.at(j + 1) + 1,    // deletion
+                dp.at(j) + 1,          // insertion
+                prev.at(j) + cost      // substitution
             });
         }
         std::swap(dp, prev);
