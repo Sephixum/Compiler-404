@@ -18,8 +18,8 @@ auto main(int argc, char** argv) -> int
   }
   else if(argc > 2)
   {
-    std::println("[Help] Usage...");
-    std::println("{} {}", argv[0], "code.txt");
+    std::println("  [INFO] Usage...");
+    std::println("    {} {}", argv[0], "code.txt");
     return EXIT_FAILURE;
   }
 
@@ -46,15 +46,15 @@ auto main(int argc, char** argv) -> int
   {
     ++line_counter;
 
-    auto parse_bound = [&](std::string const& s)
+    auto parse_bound = [line_counter](const std::string& s)
     { 
       return analyzer::parse_all(s, line_counter);
     };
 
     auto lexeme_pipeline = line 
                          | stdv::split(' ')
-                         | stdv::filter([](auto&& r)   { return not std::ranges::empty(r); })
-                         | stdv::transform([](auto&& r){ return std::string{std::ranges::begin(r), std::ranges::end(r)};})
+                         | stdv::filter([](auto&& r){ return not stdr::empty(r); })
+                         | stdv::transform([](auto&& r){ return std::string(stdr::begin(r), stdr::end(r));})
                          | stdv::transform(parse_bound)
                          | stdv::join_with(' ')
                          | stdr::to<std::string>();
