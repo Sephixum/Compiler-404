@@ -14,44 +14,49 @@
 #include <utility>
 #include <vector>
 
+namespace stdr = std::ranges;
+namespace stdv = std::views;
+using namespace std::literals;
+
+
 #if not defined(constant)
 #define constant static constexpr auto
 #endif
 
-constant range = std::views::iota;
+constant range = stdv::iota;
 
 constant known_tokens = 
   std::array
     {
-      "+",
-      "-",
-      "*",
-      "/",
-      "==",
-      "!=",
-      "<-",
-      ":",
-      ">=",
-      "<=",
-      "(",
-      ")",
-      "{",
-      "}",
-      ">",
-      "<",
-      "if",
-      "else",
-      "for",
-      "elif",
-      "proc",
-      "var",
-      "run",
-      "return",
-      "int",
-      "float",
-      "True",
-      "False",
-      "bool"
+      "+"sv,
+      "-"sv,
+      "*"sv,
+      "/"sv,
+      "=="sv,
+      "!="sv,
+      "<-"sv,
+      ":"sv,
+      ">="sv,
+      "<="sv,
+      "("sv,
+      ")"sv,
+      "{"sv,
+      "}"sv,
+      ">"sv,
+      "<"sv,
+      "if"sv,
+      "else"sv,
+      "for"sv,
+      "elif"sv,
+      "proc"sv,
+      "var"sv,
+      "run"sv,
+      "return"sv,
+      "int"sv,
+      "float"sv,
+      "True"sv,
+      "False"sv,
+      "bool"sv
     };
 
 static int levenshtein(std::string_view a, std::string_view b) {
@@ -77,20 +82,20 @@ static int levenshtein(std::string_view a, std::string_view b) {
                 prev.at(j) + cost      // substitution
             });
         }
-        std::swap(dp, prev);
+        stdr::swap(dp, prev);
     }
 
-    return prev[n];
+    return  prev.at(n);
 }
 
 static std::string find_suggestion(std::string_view input) 
 {
   auto scored = known_tokens
-                | std::views::transform([&input](auto const& tok) { return std::pair{ levenshtein(input, tok), tok }; })
-                | std::views::filter([](auto const& p) { return p.first <= 2; })
-                | std::ranges::to<std::vector>();
+                | stdv::transform([&input](auto const& tok) { return std::pair{ levenshtein(input, tok), tok }; })
+                | stdv::filter([](auto const& p) { return p.first <= 2; })
+                | stdr::to<std::vector>();
 
-  std::ranges::sort
+  stdr::sort
   (
       scored, 
       [](auto& a, auto& b)
@@ -100,12 +105,12 @@ static std::string find_suggestion(std::string_view input)
   );
 
   auto result = scored
-                | std::views::transform([](const auto& pair){ return pair.second; })
-                | std::ranges::to<std::vector>();
+                | stdv::transform([](const auto& pair){ return pair.second; })
+                | stdr::to<std::vector>();
 
   if(not result.empty())
   {
-    return result.at(0);
+    return std::string{result.at(0)};
   }
 
   return {};
@@ -113,8 +118,6 @@ static std::string find_suggestion(std::string_view input)
 
 namespace analyzer
 {
-  using namespace std::literals;
-
   using Result = std::expected<std::string, std::string>;
   constant Err = std::unexpected<std::string>{"<UNKNOWN_TOKEN>"};
 
