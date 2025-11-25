@@ -61,13 +61,11 @@ static int levenshtein(std::string_view a, std::string_view b) {
     auto dp   = std::vector<int>(n + 1);
     auto prev = std::vector<int>(n + 1);
 
-    // for (size_t j = 0; j < n + 1; ++j)
     for (auto j : range(0uz, n + 1))
     {
       prev.at(j) = j;
     }
 
-    // for (size_t i = 0; i < m; ++i)
     for (auto i : range(0uz, m))
     {
         dp.at(0) = i + 1;
@@ -102,8 +100,8 @@ static std::string find_suggestion(std::string_view input)
   );
 
   auto result = scored
-              | std::views::transform([](const auto& pair){ return pair.second; })
-              | std::ranges::to<std::vector>();
+                | std::views::transform([](const auto& pair){ return pair.second; })
+                | std::ranges::to<std::vector>();
 
   if(not result.empty())
   {
