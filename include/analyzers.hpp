@@ -453,6 +453,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::C: return Err;
 
         case State::D:
@@ -518,6 +519,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::B:
           if(lexeme[index] == 'r')
           {
@@ -595,6 +597,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::B:
           if(lexeme[index] == 'a')
           {
@@ -660,6 +663,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::B:
           if(lexeme[index] == 'u')
           {
@@ -725,6 +729,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::B:
           if(lexeme[index] == 'e')
           {
@@ -762,6 +767,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::F:
           if(lexeme[index] == 'r')
           {
@@ -773,6 +779,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::G:
           if(lexeme[index] == 'n')
           {
@@ -784,6 +791,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::H:
           if(index == lexeme.size())
           {
@@ -822,6 +830,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::B:
           if(lexeme[index] == 'n')
           {
@@ -887,6 +896,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::B:
           if(lexeme[index] == 'l')
           {
@@ -936,6 +946,7 @@ namespace analyzer
             state = State::C;
           }
           break;
+
         case State::G:
           if(index == lexeme.size())
           {
