@@ -1,0 +1,23 @@
+proc   _test_func ( )
+{
+  var _ret_val : int <- 242
+
+  var _flag_test : bool <- True
+
+  if ( _flag_test == True )
+  {
+    _ret_val <- 3
+  }
+  else
+  {
+    _ret_val <- 42
+  }
+
+  return
+}
+
+proc _main ( )
+{
+  va _ret_val : foat <- 253.999
+  run _test_func
+}
