@@ -1,4 +1,5 @@
 #include "include/analyzers.hpp"
+#include <functional>
 #include <print>
 #include <fstream>
 #include <filesystem>

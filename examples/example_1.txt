@@ -18,6 +18,6 @@ proc   _test_func ( )
 
 proc _main ( )
 {
-  va _ret_val : foat <- 253.999
+  va _test_val : foat <- 253.999
   run _test_func
 }
