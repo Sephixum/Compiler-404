@@ -166,7 +166,7 @@ namespace analyzer
 
     auto is_in_alphabet = [](char ch) -> bool
     {
-      if(alphabet.find(ch) != std::string::npos)
+      if(alphabet.contains(ch))
       {
         return true;
       }
@@ -1207,7 +1207,7 @@ namespace analyzer
     std::unreachable();
   }
 
-  constexpr Result num_kw(std::string lexeme) 
+  constexpr Result int_num_kw(std::string lexeme) 
   {
     [[maybe_unused]] constant alphabet = "0123456789"sv;
     enum struct State { A, B, C, D };
@@ -1274,15 +1274,14 @@ namespace analyzer
     std::unreachable();
   }
 
-  constexpr Result num_frac_kw(std::string lexeme) 
+  constexpr Result float_num_kw(std::string lexeme) 
   {
-
     [[maybe_unused]] constant alphabet = "0123456789."sv;
-    enum struct State { A, B, C, D };
+    enum struct State { A, B, C, D, E, F, G };
 
     auto is_in_alphabet = [](char ch) -> bool
     {
-      if(alphabet.find(ch) != std::string_view::npos)
+      if(alphabet.contains(ch))
       {
         return true;
       }
@@ -1297,56 +1296,125 @@ namespace analyzer
       switch(state) 
       {
         case State::A:
-          if(is_in_alphabet(lexeme[index]))
+          if (is_in_alphabet(lexeme[index]) and std::isdigit(lexeme[index]))
           {
             state = State::B;
             ++index;
           }
-          else
+          else if (is_in_alphabet(lexeme[index]) and lexeme[index] == '.')
           {
             state = State::C;
+            ++index;
+          }
+          else 
+          {
+            state = State::F;
           }
           break;
 
         case State::B:
-          if(is_in_alphabet(lexeme[index]) and std::isdigit(lexeme[index]))
+          if (is_in_alphabet(lexeme[index]) and std::isdigit(lexeme[index]))
           {
             state = State::B;
             ++index;
           }
-          else if(is_in_alphabet(lexeme[index]) and lexeme[index] == '.')
+          else if (is_in_alphabet(lexeme[index]) and lexeme[index] == '.')
           {
             state = State::D;
             ++index;
           }
           else
           {
-            state = State::C;
+            state = State::F;
           }
           break;
 
-        case State::C: return Err;
+        case State::C:
+          if (is_in_alphabet(lexeme[index]) and std::isdigit(lexeme[index]))
+          {
+            state = State::E;
+            ++index;
+          }
+          else if (is_in_alphabet(lexeme[index]) and lexeme[index] == '.')
+          {
+            state = State::F;
+          }
+          else
+          {
+            state = State::F;
+          }
+          break;
 
         case State::D:
           if(index == lexeme.size())
           {
             return std::format("<{}: \"{}\">", TokenType::KW_FRAC_NUM, lexeme);
           }
-          else
+          else 
           {
-            if(is_in_alphabet(lexeme[index]) and std::isdigit(lexeme[index]))
+            if (is_in_alphabet(lexeme[index]) and std::isdigit(lexeme[index]))
             {
-              state = State::D;
+              state = State::G;
               ++index;
+            }
+            else if (is_in_alphabet(lexeme[index]) and lexeme[index] == '.')
+            {
+              state = State::F;
             }
             else
             {
-              state = State::C;
+              state = State::F;
             }
           }
           break;
 
+        case State::E:
+          if(index == lexeme.size())
+          {
+            return std::format("<{}: \"{}\">", TokenType::KW_FRAC_NUM, lexeme);
+          }
+          else 
+          {
+            if (is_in_alphabet(lexeme[index]) and std::isdigit(lexeme[index]))
+            {
+              state = State::E;
+              ++index;
+            }
+            else if (is_in_alphabet(lexeme[index]) and lexeme[index] == '.')
+            {
+              state = State::F;
+            }
+            else
+            {
+              state = State::F;
+            }
+          }
+          break;
 
+        case State::F: return Err;
+
+        case State::G:
+          if(index == lexeme.size())
+          {
+            return std::format("<{}: \"{}\">", TokenType::KW_FRAC_NUM, lexeme);
+          }
+          else
+          {
+            if (is_in_alphabet(lexeme[index]) and std::isdigit(lexeme[index]))
+            {
+              state = State::G;
+              ++index;
+            }
+            else if (is_in_alphabet(lexeme[index]) and lexeme[index] == '.')
+            {
+              state = State::F;
+            }
+            else
+            {
+              state = State::F;
+            }
+          }
+          break;
       }
     }
     std::unreachable();
@@ -1371,8 +1439,8 @@ namespace analyzer
       True_kw,
       False_kw,
       bool_kw,
-      num_kw,
-      num_frac_kw,
+      int_num_kw,
+      float_num_kw,
       identifier
     };
 

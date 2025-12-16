@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++23 -O0 -Wall -Wextra -Werror -pedantic
+CXXFLAGS = -std=c++26 -O0 -Wall -Wextra -Werror -pedantic
 
 SRC = $(wildcard *.cpp)
 EXE = app
