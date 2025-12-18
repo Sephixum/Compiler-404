@@ -9,7 +9,7 @@ proc _fac ( _n : int ) int
     return 1
   }
 
-  return _n * ( run ( _n - 1 ) )
+  return _n * ( run _fac ( _n - 1 ) )
 }
 
 proc _main ( )

@@ -202,7 +202,7 @@ namespace tks
   [[nodiscard]]
   constexpr auto to_string(const Token token) -> std::string
   {
-    return token.visit
+    return std::visit
     (
       overload
       {
@@ -249,7 +249,7 @@ namespace tks
         [](tks::LeEqual)    -> std::string { return "<LESS_EQUAL_TK>";    },
         [](tks::Greater)    -> std::string { return "<GREATER_TK>";       },
         [](tks::Less)       -> std::string { return "<LESS_TK>";          }
-      }
+      }, token
     );
   }
 
