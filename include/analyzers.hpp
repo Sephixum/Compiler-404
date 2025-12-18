@@ -1,6 +1,7 @@
 #pragma once
 
 #include "token_types.hpp"
+#include "tokens.hpp"
 
 #include <expected>
 #include <string>
@@ -59,7 +60,7 @@ constant known_tokens =
       "bool"sv
     };
 
-static int levenshtein(std::string_view a, std::string_view b) {
+static std::int32_t levenshtein(std::string_view a, std::string_view b) {
     const auto m = a.size();
     const auto n = b.size();
 
@@ -98,7 +99,7 @@ static std::string find_suggestion(std::string_view input)
   stdr::sort
   (
       scored, 
-      [](auto& a, auto& b)
+      [](const auto& a, const auto& b)
       {
         return a.first < b.first;
       }
@@ -118,8 +119,36 @@ static std::string find_suggestion(std::string_view input)
 
 namespace analyzer
 {
-  using Result = std::expected<std::string, std::string>;
-  constant Err = std::unexpected<std::string>{"<UNKNOWN_TOKEN>"};
+
+  namespace detail 
+  {
+
+    template<typename T>
+    constexpr auto parse_number(std::string_view expr) -> T
+      requires std::integral<T> or std::floating_point<T>
+    {
+      auto res = T{};
+
+      auto [ptr, ec] = std::from_chars(
+          expr.data(),
+          expr.data() + expr.size(),
+          res
+      );
+
+      switch (ec)
+      {
+        case std::errc::invalid_argument   : res = 0; break;
+        case std::errc::result_out_of_range: res = std::numeric_limits<std::uint64_t>::max(); break;
+        default: break;
+      }
+
+      return res;
+    }
+
+  }
+
+  using Result = std::expected<Token, tks::Unknown>;
+  constant Err = std::unexpected<tks::Unknown>{tks::Unknown{}};
 
   static auto identifier_table = std::unordered_map<std::string, std::size_t>{};
   static auto identifier_id    = std::size_t{0};
@@ -127,31 +156,31 @@ namespace analyzer
   constexpr Result symbol(std::string lexeme) 
   {
     constant symbols = 
-      std::array
+      std::array<std::pair<std::string_view, Token>, 16>
       {
-        std::pair{"+"sv, TokenType::SYM_PLUS},       // [X]
-        std::pair{"-"sv, TokenType::SYM_MINUS},      // [X]
-        std::pair{"*"sv, TokenType::SYM_MUL},        // [X]
-        std::pair{"/"sv, TokenType::SYM_DIV},        // [X]
-        std::pair{"=="sv,TokenType::SYM_EQ},         // [X]
-        std::pair{"!="sv,TokenType::SYM_UNEQ},       // [X]
-        std::pair{"<-"sv,TokenType::SYM_ASSIGN},     // [X]
-        std::pair{":"sv, TokenType::SYM_COLON},      // [X]
-        std::pair{">="sv,TokenType::SYM_GEQ},        // [X]
-        std::pair{"<="sv,TokenType::SYM_LEQ},        // [X]
-        std::pair{"("sv, TokenType::SYM_PARAN_OPEN}, // [X]
-        std::pair{")"sv, TokenType::SYM_PARAN_CLOSE},// [X]
-        std::pair{"{"sv, TokenType::SYM_BRACE_OPEN}, // [X]
-        std::pair{"}"sv, TokenType::SYM_BRACE_CLOSE},// [X]
-        std::pair{">"sv, TokenType::SYM_GR},         // [X]
-        std::pair{"<"sv, TokenType::SYM_LE},         // [X]
+        std::pair{"+"sv, tks::Plus{}},       // [X]
+        std::pair{"-"sv, tks::Minus{}},      // [X]
+        std::pair{"*"sv, tks::Mul{}},        // [X]
+        std::pair{"/"sv, tks::Devide{}},        // [X]
+        std::pair{"=="sv,tks::Equal{}},         // [X]
+        std::pair{"!="sv,tks::Unequal{}},       // [X]
+        std::pair{"<-"sv,tks::Assign{}},     // [X]
+        std::pair{":"sv, tks::Colon{}},      // [X]
+        std::pair{">="sv,tks::GrEqual{}},        // [X]
+        std::pair{"<="sv,tks::LeEqual{}},        // [X]
+        std::pair{"("sv, tks::ParanOpen{}}, // [X]
+        std::pair{")"sv, tks::ParanClose{}},// [X]
+        std::pair{"{"sv, tks::BraceOpen{}}, // [X]
+        std::pair{"}"sv, tks::BraceClose{}},// [X]
+        std::pair{">"sv, tks::Greater{}},         // [X]
+        std::pair{"<"sv, tks::Less{}},         // [X]
       };
 
     for (const auto& [sym_str, type] : symbols) 
     {
       if (sym_str == lexeme)
       {
-        return std::format("<{}: \"{}\">", type, lexeme);
+        return type;
       }
     }
 
@@ -197,13 +226,13 @@ namespace analyzer
             if(identifier_table.contains(lexeme))
             {
               // If Identifier exists in Identifier table
-              return std::format("<{}: {}>", TokenType::ID, identifier_table[lexeme]);
+              return tks::Id{identifier_table[lexeme]};
             }
             else
             {
               // If Identifier does not exist in Identifier table
               identifier_table[lexeme] = ++identifier_id;
-              return std::format("<{}: {}>", TokenType::ID, identifier_table[lexeme]);
+              return tks::Id{identifier_table[lexeme]};
             }
           }
           else 
@@ -267,7 +296,7 @@ namespace analyzer
         case State::D:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_IF, lexeme);
+            return tks::If{};
           }
           else 
           {
@@ -343,7 +372,7 @@ namespace analyzer
         case State::F:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_ELSE, lexeme);
+            return tks::Else{};
           }
           else
           {
@@ -409,7 +438,7 @@ namespace analyzer
         case State::E:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_FOR, lexeme);
+            return tks::For{};
           }
           else 
           {
@@ -486,7 +515,7 @@ namespace analyzer
         case State::F:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_ELIF, lexeme);
+            return tks::Elif{};
           }
           else 
           {
@@ -564,7 +593,7 @@ namespace analyzer
         case State::F:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_PROC, lexeme);
+            return tks::Proc{};
           }
           else
           {
@@ -630,7 +659,7 @@ namespace analyzer
         case State::E:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_VAR, lexeme);
+            return tks::Var{};
           }
           else
           {
@@ -696,7 +725,7 @@ namespace analyzer
         case State::E:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_RUN, lexeme);
+            return tks::Run{};
           }
           else
           {
@@ -798,7 +827,7 @@ namespace analyzer
         case State::H:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_RETURN, lexeme);
+            return tks::Return{};
           }
           else
           {
@@ -863,7 +892,7 @@ namespace analyzer
         case State::E:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_INT, lexeme);
+            return tks::Int{};
           }
           else
           {
@@ -953,7 +982,7 @@ namespace analyzer
         case State::G:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_FLOAT, lexeme);
+            return tks::Float{};
           }
           else
           {
@@ -1030,7 +1059,7 @@ namespace analyzer
         case State::F:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_TRUE, lexeme);
+            return tks::True{};
           }
           else
           {
@@ -1118,7 +1147,7 @@ namespace analyzer
         case State::G:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_FALSE, lexeme);
+            return tks::False{};
           }
           else
           {
@@ -1195,7 +1224,7 @@ namespace analyzer
         case State::F:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_BOOL, lexeme);
+            return tks::Bool{};
           }
           else
           {
@@ -1234,7 +1263,7 @@ namespace analyzer
         case State::B:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_NUM, lexeme);
+            return tks::IntNum{.value = detail::parse_number<std::uint64_t>(lexeme)};
           }
           else if(alphabet.contains(lexeme[index]))
           {
@@ -1252,7 +1281,7 @@ namespace analyzer
         case State::D:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_NUM, lexeme);
+            return tks::IntNum{.value = detail::parse_number<std::uint64_t>(lexeme)};
           }
           else
           {
@@ -1267,8 +1296,6 @@ namespace analyzer
             }
           }
           break;
-
-
       }
     }
     std::unreachable();
@@ -1277,7 +1304,7 @@ namespace analyzer
   constexpr Result float_num_kw(std::string lexeme) 
   {
     [[maybe_unused]] constant alphabet = "0123456789."sv;
-    enum struct State { A, B, C, D, E, F, G };
+    enum struct State { A, B, C, D, E, F };
 
     auto is_in_alphabet = [](char ch) -> bool
     {
@@ -1348,13 +1375,13 @@ namespace analyzer
         case State::D:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_FRAC_NUM, lexeme);
+            return tks::FloatNum{.value = detail::parse_number<double>(lexeme)};
           }
           else 
           {
             if (is_in_alphabet(lexeme[index]) and std::isdigit(lexeme[index]))
             {
-              state = State::G;
+              state = State::D;
               ++index;
             }
             else if (is_in_alphabet(lexeme[index]) and lexeme[index] == '.')
@@ -1371,7 +1398,7 @@ namespace analyzer
         case State::E:
           if(index == lexeme.size())
           {
-            return std::format("<{}: \"{}\">", TokenType::KW_FRAC_NUM, lexeme);
+            return tks::FloatNum{.value = detail::parse_number<double>(lexeme)};
           }
           else 
           {
@@ -1392,29 +1419,6 @@ namespace analyzer
           break;
 
         case State::F: return Err;
-
-        case State::G:
-          if(index == lexeme.size())
-          {
-            return std::format("<{}: \"{}\">", TokenType::KW_FRAC_NUM, lexeme);
-          }
-          else
-          {
-            if (is_in_alphabet(lexeme[index]) and std::isdigit(lexeme[index]))
-            {
-              state = State::G;
-              ++index;
-            }
-            else if (is_in_alphabet(lexeme[index]) and lexeme[index] == '.')
-            {
-              state = State::F;
-            }
-            else
-            {
-              state = State::F;
-            }
-          }
-          break;
       }
     }
     std::unreachable();
@@ -1448,14 +1452,17 @@ namespace analyzer
     {
       if (auto res = parser(lexeme))
       {
-        return *res;
+        return tks::to_string(*res);
       }
     }
 
     if (auto suggestion = find_suggestion(lexeme); !suggestion.empty()) 
     {
-      std::print(std::cout, "[Error] <UNKNOWN_TOKEN \"{}\"> at line {}. Did you mean \"{}\"? ",
-            lexeme, line, suggestion
+      std::print(std::cout,
+          "[Error] <UNKNOWN_TOKEN \"{}\"> at line {}. Did you mean \"{}\"? ",
+          lexeme,
+          line,
+          suggestion
       );
 
       auto new_token = std::string{};
